@@ -1,62 +1,83 @@
-# MIPS_PIPELINED_ARCHITECTURE
-5-stage pipelined MIPS CPU in Verilog with hazard detection and forwarding, built on a single-cycle design.
-# Pipelined MIPS Processor (Verilog)
+# 5-Stage Pipelined MIPS Processor
 
-A 5-stage pipelined MIPS processor implemented in Verilog, built on top of a
+A 32-bit 5-stage pipelined MIPS processor implemented in Verilog, built on top of a
 previously completed and verified [single-cycle MIPS design](https://github.com/juhihehe/MIPS_single_cycle).
-The pipeline follows the classic IF → ID → EX → MEM → WB structure, with
-hazard detection and data forwarding to keep the pipeline running correctly
-without unnecessary stalls.
+Features data forwarding, hazard detection, branch handling, jump support, and
+self-checking verification.
 
-## Architecture
+## Pipeline Architecture
 
-- **Pipeline registers:** IF/ID, ID/EX, EX/MEM, MEM/WB
-- **Hazard detection unit:** detects load-use hazards and stalls the pipeline
-  when a dependent instruction immediately follows a `lw`
-- **Forwarding unit:** resolves data hazards via EX/MEM and MEM/WB forwarding
-  paths, avoiding stalls for back-to-back ALU-dependent instructions
-- **Branch handling:** branches are resolved early, in the EX stage
+```text
+IF → IF/ID → ID → ID/EX → EX → EX/MEM → MEM → MEM/WB → WB
+```
+
+**Stages:**
+- **IF** — instruction fetch and PC update
+- **ID** — instruction decoding, register read, branch evaluation
+- **EX** — ALU operation and forwarding
+- **MEM** — data memory access
+- **WB** — register write-back
 
 ## Supported instructions
 
-Same instruction set as the single-cycle base design:
+Same core ISA as the single-cycle base design:
 
 | Type | Instructions |
 |------|-------------|
-| R-type | `add`, `sub`, `and`, `or`, `slt`, `nor` |
+| R-type | `add`, `sub`, `and`, `or`, `slt` |
 | I-type | `addi`, `lw`, `sw`, `beq` |
 | J-type | `j` |
 
+## Features
+
+- EX/MEM and MEM/WB data forwarding
+- Load-use hazard detection and pipeline stalling
+- Branch resolution in the ID stage (reduces taken-branch penalty)
+- Branch operand forwarding and branch-specific stalls
+- Jump handling and pipeline flushing
+- Data memory read/write support
+- Sign extension for immediate instructions
+- Self-checking Verilog testbench
+
+## Hazard handling
+
+Forwarding resolves most RAW data hazards. For load-use dependencies such as:
+
+\`\`\`asm
+lw  \$t4, 0(\$zero)
+add \$t5, \$t4, \$t1
+\`\`\`
+
+the hazard detection unit inserts a pipeline stall until the loaded value
+becomes available.
+
+Branches are resolved in the ID stage to reduce the taken-branch penalty,
+with additional forwarding and stall logic to handle branch dependencies.
+
 ## Verification
 
-Verified through full top-level simulation (`tb_mips_top.v`) rather than
-isolated per-module testbenches, to confirm correct end-to-end pipeline
-behavior. Confirmed working correctly:
+A self-checking Verilog testbench verifies:
 
-- `addi`, `add`, `sub`, `lw`, `sw`
-- ALU-to-ALU forwarding (EX/MEM and MEM/WB paths)
-- Load-use hazard stalling
+- Arithmetic and logical instructions
+- Load/store operations
+- EX/MEM and MEM/WB forwarding
+- Load-use stalls
+- Store forwarding
+- Taken and not-taken branches
+- Branch data dependencies
+- Jump target handling
+- Pipeline flushing
+- Signed \`slt\` and immediate operations
 
-## Known limitations / TODO
-
-- **Branch flush not yet implemented.** Branches resolve in EX, but
-  instructions fetched from the wrong path (currently sitting in IF/ID and
-  ID/EX at resolution time) are not yet flushed. This is the next planned
-  addition.
-
-## Design approach
-
-Built incrementally on a hazard-free pipeline first (correct data flow with
-forwarding and load-use stalling), with stall/flush logic layered in
-afterward — rather than trying to handle all hazards simultaneously from the
-start.
-
-## References
-
-- Patterson & Hennessy, *Computer Organization and Design* (Chapters 2 and 4)
-- Harris & Harris, *Digital Design and Computer Architecture: RISC-V Edition*
-  (for future RISC-V work)
+The complete directed test suite passes successfully in QuestaSim.
 
 ## Tools
 
-Designed and simulated in Quartus (Analysis & Elaboration).
+- Verilog HDL
+- QuestaSim / ModelSim
+- Git
+
+## Status
+
+- **RTL Design:** Complete
+- **Functional Verification:** Complete
