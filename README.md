@@ -81,3 +81,21 @@ The complete directed test suite passes successfully in QuestaSim.
 
 - **RTL Design:** Complete
 - **Functional Verification:** Complete
+## Design for Testability (DFT)
+
+To make the design production-realistic and testable post-fabrication, full scan DFT was implemented on top of the verified pipeline.
+
+### Scan Implementation
+- All pipeline registers (IF/ID, ID/EX, EX/MEM, MEM/WB) converted to scan flip-flops
+- Single scan chain stitched through all scan cells
+- `scan_enable` control signal switches each register between normal functional operation and shift mode
+- In shift mode, registers form a serial shift register for test pattern loading (scan-in) and response capture (scan-out)
+
+### Verification
+- Dedicated scan testbench (`tb_dft_scan.v`) verifies:
+  - **Shift operation**: a known test pattern is serially shifted into the scan chain and correctly shifted out, confirming chain integrity
+  - **Capture operation**: functional mode captures pipeline state correctly into the scan cells for observation
+- Verified in QuestaSim with waveform inspection confirming correct shift-in/shift-out behavior
+
+### Why DFT
+Real silicon can't be probed internally after fabrication — scan chains give external test equipment (ATE) a way to shift in known inputs and shift out internal state to detect manufacturing defects, without needing to exercise the full functional pipeline. This mirrors the kind of DFT integration done in industry ASIC/FPGA test flows.
