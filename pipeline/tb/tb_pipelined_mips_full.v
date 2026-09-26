@@ -4,10 +4,24 @@ module tb_pipelined_mips_full;
 
     reg clk;
     reg rst;
+	 reg [31:0]instruction_external;
+	 reg [31:0]data_mem_external;
+	 wire [31:0]address_external;
+	 wire [31:0]data_address_external;
+	 wire [31:0]data_mem_wrdata;
+	 wire mem_read_external;
+	 wire mem_write_external;
 
     pipelined_mips dut (
         .clk(clk),
-        .rst(rst)
+        .rst(rst),
+		  .instruction_external(instruction_external),
+		  .address_external(addres_external),
+		  .data_mem_external(data_mem_external),
+		  .data_address_external(data_address_external),
+		  .data_mem_wrdata(data_mem_wrdata),
+		  .mem_read_external(mem_read_external),
+		  .mem_write_external(mem_write_external)
     );
 
     initial begin
